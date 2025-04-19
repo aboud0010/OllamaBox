@@ -84,3 +84,4 @@ bin/OllamaBox.ini
 /bin/res/download
 /bin/res/models
 bin/session.json
+*.dsv

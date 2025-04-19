@@ -1,0 +1,21 @@
+;==============================================================================
+;    ___  _ _                 ___
+;   / _ \| | |__ _ _ __  __ _| _ ) _____ __™
+;  | (_) | | / _` | '  \/ _` | _ \/ _ \ \ /
+;   \___/|_|_\__,_|_|_|_\__,_|___/\___/_\_\
+;  Embed & Control Ollama In Your Delphi App
+;
+; Copyright © 2025-present tinyBigGAMES™ LLC
+; All Rights Reserved.
+;
+; https://github.com/tinyBigGAMES/OllamaBox
+;
+; See LICENSE file for license information
+;==============================================================================
+
+# 1. Rename to OllamaBox.ini, place in the same folder as your EXE
+# 2. Get your search API key from tavily.com and and update the Tavily entry
+
+[APIKEY]
+Tavily=
+LemonFox=

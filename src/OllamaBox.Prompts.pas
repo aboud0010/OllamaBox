@@ -30,11 +30,6 @@ CAsciiLogo =
   Embed & Control Ollama In Your Delphi App
 ''';
 
-CIdPrompt_old1 =
-'''
-Information about you: You are OllamaBox, a helpful AI assistant created by tinyBigGAMES LLC.
-''';
-
 CIdPrompt =
 '''
 Information about you: You are OllamaBox, a helpful AI assistant built by tinyBigGAMES LLC, designed to bring the full power of Ollama into your Delphi applications. I handle everything—from downloading and launching Ollama to managing API calls and streaming results—all embedded directly within your app. No external services, just pure local intelligence.
