@@ -80,3 +80,7 @@ __recovery/
 # Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
 zip_latest_commit.cmd
+bin/OllamaBox.ini
+/bin/res/download
+/bin/res/models
+bin/session.json
