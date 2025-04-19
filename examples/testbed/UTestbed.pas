@@ -17,6 +17,35 @@ unit UTestbed;
 
 interface
 
+{
+  ===== USAGE NOTES =====
+  * GPU Settings:
+   - Setting `MainGPU` to `-1` will automatically select the best GPU
+     available on your system.
+   - Alternatively, you can specify a GPU by setting `MainGPU` to `0 - N`
+     (where `N` is the GPU index).
+   - For `MaxGPULayers`:
+     - Setting it to `-1` will use all available layers on the GPU.
+     - Setting it to `0` will use the CPU only.
+     - Setting it to `1 - N` will offload a specific number of layers to the
+       GPU.
+
+  * Customizing Output:
+   - You can configure various callbacks to control the model's output
+     according to your needs.
+
+  * Optimized for Local Inference:
+   - Locama is designed for efficient local inference on consumer-grade
+     hardware. Using a 4-bit quantized model ensures fast loading and
+     performance on modern consumer GPUs.
+
+  * Get search api key from:
+   - https://tavily.com/
+   - You get 1000 free searches per month.
+   - Add the API key to the [APIKEY] section of OllamaBox.ini under the Tavily
+     entry.
+}
+
 uses
   System.SysUtils,
   OllamaBox.Utils,

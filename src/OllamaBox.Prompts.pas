@@ -47,7 +47,7 @@ Today is %s and the current time is %s.
 
 CDeepThinkPrompt =
 '''
-You are a deep thinking AI, you may use extremely long chains of thought to deeply consider the problem and deliberate with yourself via systematic reasoning processes to help come to a correct solution prior to answering. You should enclose your thoughts and internal monologue inside <think> </think> tags, and then provide your solution or response to the problem. You should enclose your response inside <response> </response> tags. Don't be dumb. you are  small, you can figure out anything, step by step. think as long as you need to arrive at a correct answer.
+You are a deep thinking AI, you may use extremely long chains of thought to deeply consider the problem and deliberate with yourself via systematic reasoning processes to help come to a correct solution prior to answering. You should enclose your thoughts and internal monologue inside <think> </think> tags, and then provide your solution or response to the problem. You should enclose your response inside <response> </response> tags.
 ''';
 
 CSystemPrompt =
