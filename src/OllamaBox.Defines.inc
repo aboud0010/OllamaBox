@@ -1,16 +1,15 @@
 ﻿{===============================================================================
-       _
-      | |   ___  __ _ __ _ _ _ ™ 
-      | |__/ _ \/ _` / _` | ' \ 
-      |____\___/\__, \__,_|_||_|
-                |___/           
-    Local Generative AI, Unleashed.
- 
+    ___  _ _                 ___
+   / _ \| | |__ _ _ __  __ _| _ ) _____ __™
+  | (_) | | / _` | '  \/ _` | _ \/ _ \ \ /
+   \___/|_|_\__,_|_|_|_\__,_|___/\___/_\_\
+  Embed & Control Ollama In Your Delphi App
+
  Copyright © 2025-present tinyBigGAMES™ LLC
  All Rights Reserved.
 
- https://github.com/tinyBigGAMES/Locama
- 
+ https://github.com/tinyBigGAMES/OllamaBox
+
  See LICENSE file for license information
 ===============================================================================}
 
