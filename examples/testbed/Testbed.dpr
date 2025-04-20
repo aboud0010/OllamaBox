@@ -23,7 +23,8 @@ uses
   System.SysUtils,
   OllamaBox in '..\..\src\OllamaBox.pas',
   OllamaBox.Utils in '..\..\src\OllamaBox.Utils.pas',
-  UTestbed in 'UTestbed.pas';
+  UTestbed in 'UTestbed.pas',
+  OllamaBox64 in '..\..\src\OllamaBox64.pas';
 
 begin
   try

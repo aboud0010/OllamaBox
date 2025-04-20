@@ -86,3 +86,5 @@ bin/OllamaBox.ini
 bin/session.json
 *.dsv
 OllamaBox-main.zip
+!tools/**
+!src/*.lib

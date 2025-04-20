@@ -50,6 +50,7 @@ interface
 
 uses
   System.SysUtils,
+  OllamaBox64,
   OllamaBox.Utils,
   OllamaBox;
 
@@ -233,6 +234,78 @@ begin
 end;
 
 { -----------------------------------------------------------------------------
+ Test02_NextToken: Token Stream Callback
+ This callback is used by `Test02` to handle token-by-token streaming output
+ from the Ollama model. It receives each token as it is generated and writes it
+ directly to the console using `write`.
+
+ Parameters:
+   AToken     - Pointer to the wide-character string containing the token.
+   AUserData  - Optional user-defined pointer (unused in this example).
+
+ This callback is passed to `obSetOnNextToken` and is invoked automatically
+ during inference when new tokens are available.
+------------------------------------------------------------------------------ }
+procedure Test02_NextToken(const AToken: PWideChar; const AUserData: Pointer); stdcall;
+begin
+  // Write the token to the console
+  write(string(AToken));
+end;
+
+{ -----------------------------------------------------------------------------
+ Test02: Procedural API Demo
+ This procedure demonstrates how to use the OllamaBox procedural API to perform
+ a basic prompt and response exchange. It does the following:
+ - Creates a new OllamaBox instance using `obCreate`
+ - Downloads and starts the embedded Ollama server
+ - Verifies the server is running
+ - Sets a callback for streaming tokens (`Test02_NextToken`)
+ - Sends a prompt and streams the response
+ - Frees the OllamaBox instance on exit
+
+ This example uses only the procedural functions, making it ideal for simpler
+ integrations or language bindings that do not support Delphi-style classes.
+------------------------------------------------------------------------------ }
+procedure Test02();
+var
+  LOllamaBox: OllamaBox64.TOllamaBox;
+begin
+  // Create a new instance of TOllamaBox using the procedural API
+  LOllamaBox := obCreate();
+  try
+    // Display OllamaBox ascii logo
+    obDisplayLogo(LOllamaBox, nil);
+    WriteLn;
+
+    // Download the Ollama server if not already present
+    obDownloadServer(LOllamaBox);
+
+    // Start the Ollama server and exit if it fails
+    if not obStartServer(LOllamaBox) then Exit;
+
+    // Confirm the server is running before continuing
+    if not obServerRunning(LOllamaBox) then Exit;
+
+   // Pull the default model
+    obPull(LOllamaBox);
+
+    // Set a token streaming callback
+    obSetOnNextToken(LOllamaBox, Test02_NextToken, nil);
+
+    // Provide a prompt to the model
+    obSetPrompt(LOllamaBox, 'who are you?');
+
+    // Generate a response and stream the output
+    obGenerate(LOllamaBox);
+
+  finally
+    // Free the instance and clean up
+    obFree(LOllamaBox);
+  end;
+end;
+
+
+{ -----------------------------------------------------------------------------
  RunTests: Entry Point for Example Execution
  This procedure serves as the main test runner for the OllamaBox examples. It
  selects and executes a specific test routine based on the value of LNum. This
@@ -244,11 +317,12 @@ var
   LNum: Integer;
 begin
   // Set the test number to run
-  LNum := 01;
+  LNum := 02;
 
   // Select and execute the corresponding test
   case LNum of
     01: Test01();
+    02: Test02();
   end;
 
   // Pause the console so results can be reviewed before closing

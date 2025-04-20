@@ -1,4 +1,4 @@
-#BEGIN_PROMPT AsciiLogo
+﻿#BEGIN_PROMPT AsciiLogo
     ___  _ _                 ___
    / _ \| | |__ _ _ __  __ _| _ ) _____ __™
   | (_) | | / _` | '  \/ _` | _ \/ _ \ \ /
