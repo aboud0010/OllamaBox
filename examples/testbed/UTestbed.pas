@@ -100,6 +100,13 @@ begin
     LOllamaBox.DownloadServer();
     LOllamaBox.StartServer();
 
+    // Check if Ollam server is running
+    if not LOllamaBox.ServerRunning() then
+    begin
+      obConsole.PrintLn(LOllamaBox.Error);
+      Exit;
+    end;
+
     // Pull the default model
     LOllamaBox.Pull();
 

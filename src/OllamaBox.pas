@@ -296,17 +296,16 @@ type
     function StartServer(): Boolean;
 
     /// <summary>
-    ///   Indicates whether the Ollama server is currently active and running
-    ///   within the context of the hosting application.
+    ///   Checks whether the Ollama server is currently running within the context of the calling application.
     /// </summary>
     /// <returns>
-    ///   <c>True</c> if the server is running and responsive; otherwise, <c>False</c>.
+    ///   <c>True</c> if the embedded Ollama server is active in the current process; otherwise, <c>False</c>.
     /// </returns>
     /// <remarks>
-    ///   This method may perform internal checks such as validating the process state
-    ///   or sending a ping request to verify that the server is accepting connections.
+    ///   This method verifies that the Ollama server instance was started using <see cref="StartServer"/>
+    ///   and is still alive in-process. It does not check for external or system-wide Ollama instances.
     /// </remarks>
-    function ServerActive(): Boolean;
+    function ServerStarted(): Boolean;
 
     /// <summary>
     ///   Stops the running instance of the Ollama server that was started within
@@ -317,6 +316,20 @@ type
     ///   it may be using. If the server is not running, this method performs no action.
     /// </remarks>
     procedure StopServer();
+
+    /// <summary>
+    ///   Checks whether the Ollama server is currently running and accepting connections
+    ///   at the address specified by <see cref="GetServerBaseAPIUrl"/>.
+    /// </summary>
+    /// <returns>
+    ///   <c>True</c> if the Ollama server is active and responsive; otherwise, <c>False</c>.
+    /// </returns>
+    /// <remarks>
+    ///   This method confirms that the server process is running and that its HTTP API is reachable
+    ///   and ready to serve requests. It may perform a health check or version query on the target URL
+    ///   to validate that the server is not only started but fully initialized.
+    /// </remarks>
+    function ServerRunning(): Boolean;
 
     /// <summary>
     ///   Returns the base URL used to access the Ollama server's REST API,
@@ -1668,7 +1681,7 @@ begin
   Result := True;
 end;
 
-function  TOllamaBox.ServerActive(): Boolean;
+function  TOllamaBox.ServerStarted(): Boolean;
 begin
   Result := Boolean(FProcessID <> 0);
 end;
@@ -1725,6 +1738,18 @@ begin
       end;
     end;
   end;
+end;
+
+function  TOllamaBox.ServerRunning(): Boolean;
+var
+  LResponse: string;
+begin
+  Result := False;
+  if not ServerStarted() then Exit;
+  if Http(GetServerBaseAPIUrl(), obHttpGet, '', LResponse) then
+    Result := Boolean(LResponse = 'Ollama is running')
+  else
+    SetError('Ollama service is not running', []);
 end;
 
 function TOllamaBox.GetServerBaseAPIUrl(): string;
@@ -1850,7 +1875,7 @@ var
 begin
   Result := False;
 
-  if not ServerActive then
+  if not ServerStarted then
   begin
     SetError('Ollama server is not active', []);
     Exit;
@@ -1938,7 +1963,7 @@ var
 begin
   Result := False;
 
-  if not ServerActive() then
+  if not ServerStarted() then
   begin
     SetError('Ollama server is not active', []);
     Exit;
