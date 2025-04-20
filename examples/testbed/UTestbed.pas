@@ -35,7 +35,7 @@ interface
      according to your needs.
 
   * Optimized for Local Inference:
-   - Locama is designed for efficient local inference on consumer-grade
+   - Designed for efficient local inference on consumer-grade
      hardware. Using a 4-bit quantized model ensures fast loading and
      performance on modern consumer GPUs.
 
