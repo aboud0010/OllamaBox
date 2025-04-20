@@ -88,3 +88,4 @@ bin/session.json
 OllamaBox-main.zip
 !tools/**
 !src/*.lib
+!bin/OllamaBox64.dll
