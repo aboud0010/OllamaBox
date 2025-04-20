@@ -32,8 +32,7 @@ uses
   System.JSON,
   System.Hash,
   EasyJson,
-  OllamaBox.Utils,
-  OllamaBox.Prompts;
+  OllamaBox.Utils;
 
 const
 
@@ -133,6 +132,7 @@ type
   /// </remarks>
   TOllamaBox = class(TobObject)
   protected type
+    HttpOperation = (obHttpGet, obHttpPost);
     TImage = record
       Binary: string;
       MimeType: string;
@@ -183,12 +183,14 @@ type
     FOnResponseEnd: TobCallback;
     FOnPullModel: TobPullModelCallback;
     FTool: TobToolStreamProcessor;
-    FFiler: TobMarkdownStreamFilter;
+    FFilter: TobMarkdownStreamFilter;
     FConfigFile: TobConfigFile;
     FTavilyApiKey: string;
     FLemonFoxApiKey: string;
-    function CheckLatestOllamaVersion(out AVersionTag, ADownloadURL: string): Boolean;
-    function BuildServerCmdLine: string;
+    FOllamVersion: string;
+    FPrompts: TobPromptDatabase;
+    function  CheckLatestOllamaVersion(out AVersionTag, ADownloadURL: string): Boolean;
+    function  BuildServerCmdLine: string;
     function  GetUrl(const ARoute: string): string;
     function  GetContext(): TArray<Integer>;
     procedure SetContext(const AJsonArray: string);
@@ -198,6 +200,8 @@ type
     procedure SetMainGPU(const AValue: Int32);
     procedure SetThreads(const AValue: Int32);
     function  GetSystem(): string;
+    function  Http(const AURL: string; const AOperation: TOllamaBox.HttpOperation; const ABody: string; out AResponse: string): Boolean;
+    procedure DoGetOllamaVersion();
     procedure DoNextToken(const AToken: string);
     function  DoCancel(): Boolean;
     procedure DoPull(const AMessage: string; const APercent: Double; const AStatus: TobStatus);
@@ -235,6 +239,19 @@ type
     ///   This is the version of the TOllamaBox wrapper itself, not the Ollama runtime or model version.
     /// </remarks>
     function GetVersion(): string;
+
+    /// <summary>
+    ///   Returns the version of the Ollama runtime currently installed or running.
+    /// </summary>
+    /// <returns>
+    ///   A string representing the Ollama version, typically in SemVer format (e.g., <c>"0.1.34"</c>).
+    /// </returns>
+    /// <remarks>
+    ///   This method queries the embedded or locally hosted Ollama server to retrieve
+    ///   the version of the runtime environment used for model inference and API handling.
+    ///   It is useful for compatibility checks, diagnostics, and logging.
+    /// </remarks>
+    function GetOllamaVersion(): string;
 
     /// <summary>
     ///   Displays an ASCII art logo to the currently active console,
@@ -848,6 +865,20 @@ type
     /// </remarks>
     property Tool: TobToolStreamProcessor read FTool;
 
+    /// <summary>
+    ///   Provides access to the internal prompt database used for storing and retrieving named prompt templates.
+    /// </summary>
+    /// <remarks>
+    ///   The prompt database allows you to manage reusable prompt definitions, including system instructions,
+    ///   user messages, or prefilled templates. These can be loaded, saved, or referenced by name when building
+    ///   structured inference requests.
+    ///   <para>
+    ///   Useful for scenarios where consistent prompts are needed across sessions or dynamically injected
+    ///   into the generation workflow.
+    ///   </para>
+    /// </remarks>
+    property Prompts: TobPromptDatabase read FPrompts;
+
   end;
 
 implementation
@@ -943,6 +974,61 @@ begin
   Result := FSystem.Text;
 end;
 
+function  TOllamaBox.Http(const AURL: string; const AOperation: TOllamaBox.HttpOperation; const ABody: string; out AResponse: string): Boolean;
+var
+  LHTTPClient: THTTPClient;
+  LResponse: IHTTPResponse;
+begin
+  Result := False;
+  AResponse := '';
+
+  try
+    // Initialize HTTP client
+    LHTTPClient := THTTPClient.Create;
+    try
+      // Execute request based on operation type
+      case AOperation of
+        obHttpGet:
+          LResponse := LHTTPClient.Get(AURL);
+        obHttpPost:
+          LResponse := LHTTPClient.Post(AURL, TStringStream.Create(ABody, TEncoding.UTF8), nil);
+      end;
+
+      // Get response
+      AResponse := LResponse.ContentAsString;
+      if LResponse.StatusCode = 200 then
+      begin
+        Result := True;
+      end;
+    finally
+      LHTTPClient.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      AResponse := E.Message;
+      Result := False;
+    end;
+  end;
+end;
+
+procedure TOllamaBox.DoGetOllamaVersion();
+var
+  LResponse: string;
+  LJson: TEasyJson;
+begin
+  if Http(GetUrl('version'), obHttpGet, '', LResponse) then
+  begin
+    LJson := TEasyJson.Create(LResponse);
+    try
+      if LJson.HasPath('version') then
+        FOllamVersion := LJson.Path['version'].AsString();
+    finally
+      LJson.Free();
+    end;
+  end;
+end;
+
 procedure TOllamaBox.DoNextToken(const AToken: string);
 var
   LToken, LChunk: string;
@@ -951,7 +1037,7 @@ var
 begin
   LToken := AToken;
   LToken := obUtils.SanitizeFromJson(LToken);
-  LToken := FFiler.ProcessChunk(LToken);
+  LToken := FFilter.ProcessChunk(LToken);
   FPartialResponse := FPartialResponse + LToken;
 
   repeat
@@ -1384,7 +1470,7 @@ begin
   ShowThinking := True;
   ShowResponding := True;
 
-  FFiler.SetWhitelist(['response', 'think']);
+  FFilter.SetWhitelist(['response', 'think']);
 
   FTool.OnToolDetected :=
     procedure (const AToolName: string; const AParameters: TJSONObject)
@@ -1419,14 +1505,19 @@ begin
       end;
     end;
 
-  AddSystem(CIdPrompt, []);
-  AddSystem(CAwarenessPrompt, [obUtils.GetFormattedDate(), obUtils.GetFormattedTime()]);
-  AddSystem(CDeepThinkPrompt, []);
-  AddSystem(CSystemPrompt, [CToolsPrompt]);
+  FPrompts := TobPromptDatabase.Create();
+  FPrompts.Load('Prompts.txt');
+
+  AddSystem(FPrompts.GetPrompt('IdPrompt'), []);
+  AddSystem(FPrompts.GetPrompt('AwarenessPrompt'), [obUtils.GetFormattedDate(), obUtils.GetFormattedTime()]);
+  AddSystem(FPrompts.GetPrompt('DeepThinkPrompt'), []);
+  AddSystem(FPrompts.GetPrompt('SystemPrompt'), [FPrompts.GetPrompt('ToolsPrompt')]);
+
 end;
 
 destructor TOllamaBox.Destroy();
 begin
+  FPrompts.Free();
   FTool.Free();
   FResponseStream.Free();
   FContext.Free();
@@ -1456,9 +1547,14 @@ begin
   Result := '0.1.0';
 end;
 
+function TOllamaBox.GetOllamaVersion(): string;
+begin
+  Result := FOllamVersion;
+end;
+
 procedure TOllamaBox.DisplayLogo(const AColor: string);
 begin
-  obConsole.PrintLn(AColor+CAsciiLogo);
+  obConsole.PrintLn(AColor+FPrompts.GetPrompt('AsciiLogo'));
 end;
 
 procedure TOllamaBox.DownloadServer();
@@ -1567,6 +1663,8 @@ begin
   FProcessID := LProcessInfo.dwProcessId;
   CloseHandle(LProcessInfo.hThread);
 
+  DoGetOllamaVersion();
+
   Result := True;
 end;
 
@@ -1591,6 +1689,7 @@ begin
     CloseHandle(FProcessHandle);
     FProcessHandle := 0;
     FProcessID := 0;
+    FOllamVersion := '';
   end;
 
   // Next, find and terminate any other Ollama processes
@@ -1866,7 +1965,7 @@ begin
     FHttpStatusText := '';
     FResponseStream.Clear();
     FTokenResponse.Clear();
-    FFiler.Clear();
+    FFilter.Clear();
     FTool.Clear();
 
     LJson := TEasyJson.Create();
@@ -1958,7 +2057,8 @@ begin
               end;
               LToolResponseFlag := True;
               DoNextToken(CobResponseOpenTag);
-              Prompt := Format(CToolResponsePrompt, [FTool.Response]);
+              //Prompt := Format(CToolResponsePrompt, [FTool.Response]);
+              Prompt := FPrompts.GetFormattedPrompt('ToolResponsePrompt', [FTool.Response]);
               continue;
             end;
 

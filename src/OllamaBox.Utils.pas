@@ -617,6 +617,38 @@ type
     function  GetSectionValue(const AIndex: Integer; const ADefaultValue: Boolean): Boolean; overload;
   end;
 
+  { TobPromptDatabase }
+  TobPromptDatabase = class(TobObject)
+  private
+    FFilename: string;
+    FPrompts: TStringList;
+    FLoaded: Boolean;
+
+    // Internal helper function to extract prompt content
+    function ExtractPromptContent(const APromptName: string): string;
+  public
+    constructor Create(); override;
+    destructor Destroy(); override;
+
+    // Load prompts from file
+    function Load(const AFilename: string): Boolean;
+
+    // Get a prompt by its name
+    function GetPrompt(const APromptName: string): string;
+
+    // Get a formatted prompt (replaces %s placeholders)
+    function GetFormattedPrompt(const APromptName: string; const AArgs: array of const): string;
+
+    // Check if a prompt exists
+    function PromptExists(const APromptName: string): Boolean;
+
+    // List all available prompts
+    procedure GetPromptList(AList: TStrings);
+
+    property Loaded: Boolean read FLoaded;
+    property Filename: string read FFilename;
+  end;
+
 implementation
 
 { TobPointerArray1D<T> }
@@ -3527,6 +3559,155 @@ begin
   Result := ADefaultValue;
   if not Opened then Exit;
   Result := string(GetSectionValue(AIndex, ADefaultValue.ToString)).ToBoolean
+end;
+
+{ TobPromptDatabase }
+constructor TobPromptDatabase.Create();
+begin
+  inherited;
+
+  FLoaded := False;
+  FPrompts := TStringList.Create;
+end;
+
+destructor TobPromptDatabase.Destroy();
+begin
+  if Assigned(FPrompts) then
+    FPrompts.Free;
+
+  inherited;
+end;
+
+function TobPromptDatabase.Load(const AFilename: string): Boolean;
+begin
+  Result := False;
+
+  // Check if file exists
+  if not FileExists(AFilename) then
+    Exit;
+
+  try
+    FPrompts.LoadFromFile(AFilename);
+    FFilename := AFilename;
+    FLoaded := True;
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      FLoaded := False;
+    end;
+  end;
+end;
+
+function TobPromptDatabase.ExtractPromptContent(const APromptName: string): string;
+var
+  i: Integer;
+  StartTag, EndTag: string;
+  //StartPos, EndPos: Integer;
+  IsInPrompt: Boolean;
+  PromptContent: TStringList;
+begin
+  Result := '';
+
+  if not FLoaded then
+    Exit;
+
+  StartTag := '#BEGIN_PROMPT ' + APromptName;
+  EndTag := '#END_PROMPT';
+
+  IsInPrompt := False;
+  PromptContent := TStringList.Create;
+  try
+    for i := 0 to FPrompts.Count - 1 do
+    begin
+      // Check for start tag
+      if (not IsInPrompt) and (Pos(StartTag, FPrompts[i]) = 1) then
+      begin
+        IsInPrompt := True;
+        Continue;  // Skip the tag line
+      end;
+
+      // Check for end tag
+      if IsInPrompt and (Pos(EndTag, FPrompts[i]) = 1) then
+      begin
+        Break;  // End of prompt found
+      end;
+
+      // Add content line if we're in the right prompt
+      if IsInPrompt then
+        PromptContent.Add(FPrompts[i]);
+    end;
+
+    // Combine all lines
+    Result := PromptContent.Text;
+
+    // Remove trailing line break if present
+    if (Length(Result) > 2) and (Result[Length(Result)-1] = #13) and (Result[Length(Result)] = #10) then
+      Result := Copy(Result, 1, Length(Result) - 2);
+  finally
+    PromptContent.Free;
+  end;
+end;
+
+function TobPromptDatabase.GetPrompt(const APromptName: string): string;
+begin
+  Result := ExtractPromptContent(APromptName);
+end;
+
+function TobPromptDatabase.GetFormattedPrompt(const APromptName: string; const AArgs: array of const): string;
+var
+  Template: string;
+begin
+  Result := '';
+  Template := GetPrompt(APromptName);
+
+  if Template <> '' then
+    Result := Format(Template, AArgs);
+end;
+
+function TobPromptDatabase.PromptExists(const APromptName: string): Boolean;
+var
+  i: Integer;
+  StartTag: string;
+begin
+  Result := False;
+
+  if not FLoaded then
+    Exit;
+
+  StartTag := '#BEGIN_PROMPT ' + APromptName;
+
+  for i := 0 to FPrompts.Count - 1 do
+  begin
+    if Pos(StartTag, FPrompts[i]) = 1 then
+    begin
+      Result := True;
+      Break;
+    end;
+  end;
+end;
+
+procedure TobPromptDatabase.GetPromptList(AList: TStrings);
+var
+  i: Integer;
+  Line, PromptName: string;
+  //StartPos: Integer;
+begin
+  if not Assigned(AList) or not FLoaded then
+    Exit;
+
+  AList.Clear;
+
+  for i := 0 to FPrompts.Count - 1 do
+  begin
+    Line := FPrompts[i];
+    if Pos('#BEGIN_PROMPT ', Line) = 1 then
+    begin
+      // Extract prompt name
+      PromptName := Copy(Line, 15, Length(Line) - 14);
+      AList.Add(PromptName);
+    end;
+  end;
 end;
 
 { =========================================================================== }

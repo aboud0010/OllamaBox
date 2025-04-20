@@ -122,7 +122,6 @@
         <DCCReference Include="..\..\src\OllamaBox.pas"/>
         <DCCReference Include="..\..\src\OllamaBox.Utils.pas"/>
         <DCCReference Include="UTestbed.pas"/>
-        <DCCReference Include="..\..\src\OllamaBox.Prompts.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

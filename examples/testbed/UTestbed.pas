@@ -44,6 +44,8 @@ interface
    - You get 1000 free searches per month.
    - Add the API key to the [APIKEY] section of OllamaBox.ini under the Tavily
      entry.
+
+  * See comments in `OllamaBox.ini.Template.txt` file
 }
 
 uses
@@ -114,6 +116,7 @@ begin
         obConsole.ClearScreen();
         obConsole.PrintLn();
         LOllamaBox.DisplayLogo(obCSIFGMagenta);
+        obConsole.PrintLn(obCSIFGCyan+'      OllamaBox v%s | Ollama v%s', [LOllamaBox.GetVersion(), LOllamaBox.GetOllamaVersion()]);
         obConsole.PrintLn(obCRLF+obCSIDim+obCSIFGWhite+'Type your question and press ENTER or type');
         obConsole.PrintLn(obCSIDim+obCSIFGWhite+'"/help" for available commands.'+obCRLF);
       end;
