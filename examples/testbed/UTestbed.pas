@@ -286,7 +286,7 @@ begin
     // Confirm the server is running before continuing
     if not obServerRunning(LOllamaBox) then Exit;
 
-   // Pull the default model
+    // Pull the default model
     obPull(LOllamaBox);
 
     // Set a token streaming callback
